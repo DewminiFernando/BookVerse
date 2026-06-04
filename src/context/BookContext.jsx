@@ -1,4 +1,11 @@
 import React, { createContext, useContext, useEffect, useReducer, useState } from "react";
+import {
+  DEMO_FAVORITES,
+  DEMO_READING_LIST,
+  DEMO_READING_SESSIONS,
+  DEMO_PROFILE_NAME,
+  DEMO_GOALS,
+} from "../data/demoData.js";
 
 const BookContext = createContext(null);
 
@@ -7,6 +14,8 @@ const READING_LIST_KEY = "bookverse_reading_list";
 const READING_SESSIONS_KEY = "bookverse_reading_sessions";
 const THEME_KEY = "bookverse_theme";
 const MOOD_KEY = "bookverse_mood";
+export const PROFILE_NAME_KEY = "bookverse_profile_name";
+export const GOALS_KEY = "bookverse_goals";
 
 const loadFromStorage = (key, fallback) => {
   if (typeof window === "undefined") return fallback;
@@ -16,6 +25,43 @@ const loadFromStorage = (key, fallback) => {
   } catch {
     return fallback;
   }
+};
+
+/**
+ * Like loadFromStorage, but falls back to demoFallback when the stored value
+ * is missing OR is an empty array. This ensures the site looks populated on
+ * first visit without ever overwriting real user data.
+ */
+const loadWithDemoFallback = (key, demoFallback) => {
+  if (typeof window === "undefined") return demoFallback;
+  try {
+    const stored = localStorage.getItem(key);
+    if (!stored) return demoFallback;
+    const parsed = JSON.parse(stored);
+    if (Array.isArray(parsed) && parsed.length === 0) return demoFallback;
+    return parsed;
+  } catch {
+    return demoFallback;
+  }
+};
+
+/** Seed default profile values (name + goals) only when missing. */
+export const seedDemoProfile = () => {
+  if (!localStorage.getItem(PROFILE_NAME_KEY)) {
+    localStorage.setItem(PROFILE_NAME_KEY, DEMO_PROFILE_NAME);
+  }
+  if (!localStorage.getItem(GOALS_KEY)) {
+    localStorage.setItem(GOALS_KEY, JSON.stringify(DEMO_GOALS));
+  }
+};
+
+/** Public helper used by the Profile page Reset button. */
+export const resetDemoData = () => {
+  localStorage.setItem(FAVORITES_KEY, JSON.stringify(DEMO_FAVORITES));
+  localStorage.setItem(READING_LIST_KEY, JSON.stringify(DEMO_READING_LIST));
+  localStorage.setItem(READING_SESSIONS_KEY, JSON.stringify(DEMO_READING_SESSIONS));
+  localStorage.setItem(PROFILE_NAME_KEY, DEMO_PROFILE_NAME);
+  localStorage.setItem(GOALS_KEY, JSON.stringify(DEMO_GOALS));
 };
 
 const saveToStorage = (key, value) => {
@@ -79,15 +125,15 @@ export const BookProvider = ({ children }) => {
   const [favorites, dispatchFavorites] = useReducer(
     favoritesReducer,
     [],
-    () => loadFromStorage(FAVORITES_KEY, [])
+    () => loadWithDemoFallback(FAVORITES_KEY, DEMO_FAVORITES)
   );
   const [readingList, dispatchReadingList] = useReducer(
     readingListReducer,
     [],
-    () => loadFromStorage(READING_LIST_KEY, [])
+    () => loadWithDemoFallback(READING_LIST_KEY, DEMO_READING_LIST)
   );
   const [readingSessions, setReadingSessions] = useState(() =>
-    loadFromStorage(READING_SESSIONS_KEY, [])
+    loadWithDemoFallback(READING_SESSIONS_KEY, DEMO_READING_SESSIONS)
   );
   const [theme, setTheme] = useState(() => loadFromStorage(THEME_KEY, "light"));
   const [currentMood, setCurrentMood] = useState(() => loadFromStorage(MOOD_KEY, ""));
@@ -156,6 +202,12 @@ export const BookProvider = ({ children }) => {
     setTheme((prev) => (prev === "dark" ? "light" : "dark"));
   };
 
+  // Dispatch actions to reset state without page reload
+  const resetToDemo = () => {
+    resetDemoData();
+    window.location.reload();
+  };
+
   const value = {
     favorites,
     readingList,
@@ -171,6 +223,7 @@ export const BookProvider = ({ children }) => {
     addReadingSession,
     toggleTheme,
     setCurrentMood,
+    resetToDemo,
   };
 
   return <BookContext.Provider value={value}>{children}</BookContext.Provider>;

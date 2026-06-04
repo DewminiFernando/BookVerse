@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { BookOpen, Pencil, Settings, Target, User, Sparkles, Check, Trash2, Moon, Sun, ChevronLeft, ChevronRight } from "lucide-react";
+import { BookOpen, Pencil, Settings, Target, User, Sparkles, Check, Trash2, Moon, Sun, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
 import { useBook } from "../context/BookContext.jsx";
+import { seedDemoProfile } from "../context/BookContext.jsx";
+import { DEMO_PROFILE_NAME, DEMO_GOALS } from "../data/demoData.js";
 import Button from "../components/ui/Button.jsx";
 import PaigeOwl from "../components/ui/PaigeOwl.jsx";
 
@@ -18,22 +20,22 @@ const STORAGE_KEYS = [
 ];
 
 const loadProfileName = () => {
-	if (typeof window === "undefined") return "Book Lover";
-	return localStorage.getItem(PROFILE_NAME_KEY) || "Book Lover";
+	if (typeof window === "undefined") return DEMO_PROFILE_NAME;
+	return localStorage.getItem(PROFILE_NAME_KEY) || DEMO_PROFILE_NAME;
 };
 
 const loadGoals = () => {
-	if (typeof window === "undefined") return { yearlyGoal: 12, dailyGoal: 30 };
+	if (typeof window === "undefined") return DEMO_GOALS;
 	try {
 		const stored = localStorage.getItem(GOALS_KEY);
-		if (!stored) return { yearlyGoal: 12, dailyGoal: 30 };
+		if (!stored) return DEMO_GOALS;
 		const parsed = JSON.parse(stored);
 		return {
-			yearlyGoal: parsed.yearlyGoal || 12,
-			dailyGoal: parsed.dailyGoal || 30,
+			yearlyGoal: parsed.yearlyGoal || DEMO_GOALS.yearlyGoal,
+			dailyGoal: parsed.dailyGoal || DEMO_GOALS.dailyGoal,
 		};
 	} catch {
-		return { yearlyGoal: 12, dailyGoal: 30 };
+		return DEMO_GOALS;
 	}
 };
 
@@ -154,7 +156,7 @@ const ShelfBook = ({ item, isHovered, onMouseEnter, onMouseLeave }) => {
 
 const Profile = () => {
 	const navigate = useNavigate();
-	const { favorites, readingList, readingSessions, theme, toggleTheme } = useBook();
+	const { favorites, readingList, readingSessions, theme, toggleTheme, resetToDemo } = useBook();
 	const [displayName, setDisplayName] = useState(loadProfileName);
 	const [isEditingName, setIsEditingName] = useState(false);
 	const [yearlyGoal, setYearlyGoal] = useState(() => loadGoals().yearlyGoal);
@@ -245,6 +247,8 @@ const Profile = () => {
 	}, [yearlyGoal, dailyGoal]);
 
 	useEffect(() => {
+		// Seed default profile values on first visit
+		seedDemoProfile();
 		const timer = setTimeout(() => setMounted(true), 100);
 		return () => clearTimeout(timer);
 	}, []);
@@ -287,6 +291,14 @@ const Profile = () => {
 		if (!confirmed) return;
 		STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
 		window.location.reload();
+	};
+
+	const handleResetDemo = () => {
+		const confirmed = window.confirm(
+			"Reset to demo data? This will replace your current favorites, reading list, and analytics with the preloaded demo."
+		);
+		if (!confirmed) return;
+		resetToDemo();
 	};
 
 	// Determine custom passport level title based on books read/saved
@@ -587,6 +599,25 @@ const Profile = () => {
 											)}
 										</span>
 									</button>
+								</div>
+
+								{/* Reset Demo Data */}
+								<div className="flex items-center justify-between border-b border-gold-400/10 dark:border-gold-400/5 pb-4">
+									<div>
+										<p className="text-sm font-bold text-charcoal-900 dark:text-cream-100">
+											Demo Showcase
+										</p>
+										<p className="text-xs text-charcoal-500 dark:text-cream-300 mt-0.5">
+											Restore preloaded books & reading history
+										</p>
+									</div>
+									<Button
+										variant="ghost"
+										onClick={handleResetDemo}
+										className="border border-gold-400/30 hover:bg-gold-400/10 dark:hover:bg-gold-400/10 text-gold-600 dark:text-gold-400 px-4 py-2 flex items-center gap-1.5 text-xs font-bold rounded-2xl transition-colors duration-200"
+									>
+										<RotateCcw className="w-3.5 h-3.5" /> RESET DEMO
+									</Button>
 								</div>
 
 								{/* Danger Zone Wiping Data */}

@@ -164,6 +164,22 @@ Theme features:
 
 ---
 
+## 🎬 Demo Data
+
+BookVerse includes preloaded demo reading data so first-time visitors can immediately view favorites, bookshelf progress, and analytics without manually adding books.
+
+On first visit the app automatically seeds:
+
+- **6 favorite books** from Lynn Painter, Ana Huang, Rebecca Yarros, J.K. Rowling, Julia Quinn, and Elle Kennedy
+- **A reading list** with books in various states (reading, completed, to-read)
+- **10 days of reading sessions** that populate the Analytics charts (reading velocity, genre palette, rating spectrum, streak counter)
+
+Real user data is never overwritten — demo data only loads when `localStorage` is empty.
+
+To restore the demo at any time, visit **Profile → Passport Controls → RESET DEMO**.
+
+---
+
 ## 🏗️ System Architecture
 
 ```text
